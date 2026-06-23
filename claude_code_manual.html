@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manuale Claude Code</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #efefeb;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --radius: 8px; --radius-lg: 12px;
+    --font: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0efea; --text2: #a8a79f; --text3: #6e6d67;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+    }
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; }
+  .search-wrap { position: relative; margin-bottom: 1.25rem; }
+  .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text3); pointer-events: none; }
+  input[type=text] { width: 100%; padding: 8px 36px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 14px; font-family: var(--font); outline: none; }
+  input[type=text]:focus { border-color: #534AB7; box-shadow: 0 0 0 3px rgba(83,74,183,0.12); }
+  .clear-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text2); font-size: 16px; padding: 4px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+  .tab { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 0.5px solid var(--border); background: var(--bg); color: var(--text2); font-size: 13px; cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+  .tab:hover { border-color: var(--border2); color: var(--text); }
+  .tab.active { font-weight: 500; }
+  .intro-box { border-radius: 10px; padding: 12px 16px; margin-bottom: 1.25rem; font-size: 14px; line-height: 1.6; }
+  .section { margin-bottom: 1.5rem; }
+  .section-title { font-size: 15px; font-weight: 500; margin-bottom: 0.5rem; padding-left: 10px; border-left: 3px solid; border-radius: 0; }
+  .cmd-item { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .cmd-item:last-child { border-bottom: none; }
+  code.cmd { font-family: var(--mono); font-size: 13px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 6px; padding: 2px 8px; cursor: pointer; display: inline-block; margin-bottom: 4px; color: var(--text); transition: color 0.2s, background 0.15s; }
+  code.cmd:hover { background: var(--bg3); }
+  code.cmd.copied { color: #1D9E75; }
+  .cmd-desc { font-size: 14px; color: var(--text2); line-height: 1.5; }
+  .tag { font-size: 11px; border-radius: 4px; padding: 1px 6px; display: inline-block; margin-bottom: 3px; }
+  .result-count { font-size: 13px; color: var(--text2); margin-bottom: 1rem; }
+  .no-results { font-size: 14px; color: var(--text2); }
+  .footer { font-size: 11px; color: var(--text3); text-align: center; margin-top: 2.5rem; }
+  .footer a { color: var(--text3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Manuale Claude Code</h1>
+  <p class="subtitle">Comandi organizzati per funzionalità — clicca su un comando per copiarlo</p>
+
+  <div class="search-wrap">
+    <i class="ti ti-search"></i>
+    <input type="text" id="search" placeholder="Cerca comandi o descrizioni…" oninput="onSearch(this.value)">
+    <button class="clear-btn" id="clear-btn" onclick="clearSearch()" style="display:none"><i class="ti ti-x"></i></button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="content"></div>
+
+  <p class="footer">Aggiornato a giugno 2026 · Claude Code v2.1 · <a href="https://code.claude.com/docs/en/overview" target="_blank">Documentazione ufficiale ↗</a></p>
+</div>
+
+<script>
+const categories = [
+  {
+    id: "avvio", icon: "ti-terminal-2", label: "Avvio & sessione", color: "purple",
+    intro: "Come lanciare Claude Code, aprire sessioni e navigare l'interfaccia di base.",
+    sections: [
+      { title: "Avviare Claude Code", items: [
+        { cmd: "claude", desc: "Avvia una sessione interattiva nella directory corrente. Carica automaticamente CLAUDE.md e .claude/settings.json se presenti." },
+        { cmd: 'claude "scrivi i test per auth.ts"', desc: "Avvia Claude con un prompt iniziale già impostato. Utile per iniziare subito a lavorare senza dover digitare nulla." },
+        { cmd: "claude --version / -v", desc: "Mostra la versione installata di Claude Code." },
+        { cmd: "claude --help / -h", desc: "Mostra l'elenco dei flag disponibili (nota: non è sempre completo — la documentazione ufficiale è la fonte definitiva)." },
+      ]},
+      { title: "Continuare sessioni precedenti", items: [
+        { cmd: "claude -c  (o --continue)", desc: "Riprende la sessione più recente senza riaprire da zero. Ideale per riprendere dove si era rimasti." },
+        { cmd: "claude --resume <id>", desc: "Riprende una sessione specifica tramite il suo ID. L'ID si trova con /status oppure nell'output JSON con --output-format json." },
+      ]},
+      { title: "Shortcut da tastiera (dentro la sessione)", items: [
+        { cmd: "Enter", desc: "Invia il messaggio." },
+        { cmd: "Shift+Enter", desc: "Va a capo senza inviare — per messaggi su più righe." },
+        { cmd: "↑ / ↓", desc: "Naviga i messaggi precedenti (come la history della shell)." },
+        { cmd: "Tab", desc: "Autocompleta comandi slash e percorsi di file." },
+        { cmd: "Ctrl+C", desc: "Interrompe l'esecuzione in corso (tool use, elaborazione)." },
+        { cmd: "Ctrl+C × 2", desc: "Esce da Claude Code." },
+        { cmd: "Shift+Tab (o Alt+M)", desc: "Cicla tra le modalità: Normal → Auto-Accept → Plan." },
+        { cmd: "Esc + Esc", desc: "Apre il menu di rewind per tornare a un punto precedente della sessione." },
+        { cmd: "Alt+P", desc: "Cambia modello mantenendo il testo già scritto nel campo di input." },
+        { cmd: "Alt+T", desc: "Attiva il pensiero esteso (deep reasoning) per il prossimo turn. Richiede prima /terminal-setup." },
+        { cmd: "@ (poi nome file)", desc: "Autocompleta percorsi file e li include nel contesto. Più veloce che descriverli a parole." },
+        { cmd: "! (poi comando bash)", desc: "Esegue un comando bash direttamente, mettendone l'output nel contesto senza che Claude lo narri." },
+      ]},
+    ]
+  },
+  {
+    id: "contesto", icon: "ti-files", label: "Contesto & memoria", color: "teal",
+    intro: "Comandi per gestire la finestra di contesto, comprimere sessioni lunghe e configurare la memoria permanente del progetto.",
+    sections: [
+      { title: "Gestire il contesto durante la sessione", items: [
+        { cmd: "/compact [istruzioni]", desc: "Comprime la conversazione in un riassunto denso, riducendo il consumo di token mantenendo il filo. Esempio: /compact Concentrati sul modulo auth e i test falliti. Da usare quando il contesto supera l'80%." },
+        { cmd: "/clear  (o /reset  o /new)", desc: "Azzera completamente la cronologia della conversazione. Libera tutto il contesto. Usare a inizio di un task nuovo e non correlato." },
+        { cmd: "/context", desc: "Mostra quanto è piena la finestra di contesto attuale." },
+        { cmd: "/status", desc: "Mostra informazioni sulla sessione: modello in uso, conteggio token, impostazioni correnti e ID sessione." },
+      ]},
+      { title: "Memoria permanente del progetto (CLAUDE.md)", items: [
+        { cmd: "/init", desc: "Analizza il progetto e genera un file CLAUDE.md con convenzioni, stack tecnologico e regole. Claude lo legge all'inizio di ogni sessione, eliminando la necessità di rispiegare il contesto." },
+        { cmd: "/memory", desc: "Apre l'interfaccia per aggiungere, modificare o rimuovere le regole nel CLAUDE.md. Investire 10 minuti qui ripaga in ogni sessione successiva." },
+      ]},
+    ]
+  },
+  {
+    id: "navigazione", icon: "ti-map", label: "Navigazione sessioni", color: "blue",
+    intro: "Comandi per denominare, ramificare, esportare e riprendere le sessioni di lavoro come se fossero branch git.",
+    sections: [
+      { title: "Organizzare le sessioni", items: [
+        { cmd: "/rename [nome]", desc: "Assegna un nome significativo alla sessione. Senza argomenti, genera automaticamente un nome dal contesto. Permette di trovare 'auth-refactor' settimane dopo invece di una lista incomprensibile di timestamp." },
+        { cmd: "/resume [nome o id]", desc: "Riprende una sessione precedente. Senza argomenti apre un selettore. Con un nome salta direttamente lì." },
+        { cmd: "/fork", desc: "Crea un ramo della conversazione allo stato attuale — l'equivalente di git branch. Permette di esplorare un approccio, e poi tornare al punto di fork per provarne un altro, senza distruggere lo stato funzionante." },
+        { cmd: "/export", desc: "Esporta la conversazione come testo semplice. Utile per documentazione, post-mortem o condivisione con un collega." },
+      ]},
+    ]
+  },
+  {
+    id: "modello", icon: "ti-brain", label: "Modello & costi", color: "amber",
+    intro: "Come scegliere e cambiare il modello durante la sessione, e tenere sotto controllo i costi.",
+    sections: [
+      { title: "Cambiare modello", items: [
+        { cmd: "/model <nome>", desc: "Cambia modello a metà sessione senza perdere la conversazione. Esempio: /model claude-opus-4-7 per task complessi, poi /model claude-haiku-4-5 per follow-up semplici." },
+        { cmd: "--model <nome>  (flag di avvio)", desc: "Imposta il modello al lancio. Esempio: claude --model claude-sonnet-4-6" },
+        { cmd: "Modelli disponibili (giugno 2026)", desc: "Haiku 4.5 — veloce, economico, task semplici. Sonnet 4.6 — default su Pro, coding quotidiano. Opus 4.7 — ragionamento complesso e architettura. Opus 4.8 — default su Max/Team/API, task più difficili. Fable 5 (alias: fable) — modello Mythos-class, compiti più lunghi e impegnativi." },
+      ]},
+      { title: "Monitorare i costi", items: [
+        { cmd: "/cost", desc: "Mostra il consumo di token e il costo stimato della sessione (per utenti API)." },
+        { cmd: "/stats", desc: "Mostra l'utilizzo aggregato (per abbonati Pro/Max)." },
+        { cmd: "/usage", desc: "Verifica se si è vicini al rate limit." },
+        { cmd: "/extra-usage", desc: "Configura il comportamento al raggiungimento del limite." },
+      ]},
+    ]
+  },
+  {
+    id: "sicurezza", icon: "ti-shield", label: "Permessi & sicurezza", color: "coral",
+    intro: "Controllo fine-grained su quali tool Claude può usare, con attenzione alla sicurezza in produzione e CI/CD.",
+    sections: [
+      { title: "Modalità di esecuzione", items: [
+        { cmd: "/plan  (o Shift+Tab)", desc: "Attiva la modalità solo lettura: Claude può analizzare il codice ma non modificare nulla. Tutte le modifiche proposte richiedono approvazione esplicita. Da usare su file critici, migrazioni DB, o quando si vuole capire la portata prima di procedere." },
+        { cmd: "--permission-mode bypassPermissions", desc: "Salta tutti i prompt di conferma per i tool use. Solo per ambienti automatizzati fidati dove il task è già stato verificato." },
+        { cmd: "--dangerously-skip-permissions", desc: "Disabilita tutti i prompt di conferma. Usare SOLO in ambienti CI/CD isolati e fidati. Mai usare interattivamente su codebase non familiari." },
+      ]},
+      { title: "Controllo dei tool", items: [
+        { cmd: "--allowed-tools Read,Grep,Glob", desc: "Limita Claude ai soli tool specificati. Per analisi in sola lettura: non può scrivere file né eseguire comandi." },
+        { cmd: "--disallowed-tools Bash,Write", desc: "Blocca tool specifici, lasciando disponibili tutti gli altri." },
+        { cmd: "/permissions", desc: "Mostra i permessi tool attualmente attivi nella sessione." },
+        { cmd: "/allowed-tools", desc: "Controlla e modifica i tool permessi durante la sessione." },
+      ]},
+      { title: "Rollback e sicurezza operativa", items: [
+        { cmd: "/rewind  (o /checkpoint, o Esc+Esc)", desc: "Torna a un punto precedente della conversazione. L'opzione chiave è 'Rewind code only': reverte tutte le modifiche ai file mantenendo intatta la conversazione diagnostica." },
+        { cmd: "/security-review", desc: "Analizza le modifiche sul branch git corrente specificamente per vulnerabilità di sicurezza. Focalizzato e mirato — da eseguire prima di ogni PR che tocchi autenticazione, autorizzazione, gestione dati o integrazioni esterne." },
+      ]},
+    ]
+  },
+  {
+    id: "automazione", icon: "ti-robot", label: "Automazione & scripting", color: "green",
+    intro: "Flag per usare Claude Code in pipeline CI/CD, script shell e flussi automatizzati senza sessione interattiva.",
+    sections: [
+      { title: "Modalità non interattiva", items: [
+        { cmd: 'claude -p "prompt"  (o --print)', desc: "Esegue il prompt, stampa la risposta ed esce. Nessuna sessione interattiva avviata. Il mattone fondamentale per scripting e CI." },
+        { cmd: 'cat file.ts | claude -p "cosa fa?"', desc: "Pipe di file come contesto. Claude lo elabora e risponde. Combinabile con qualsiasi comando Unix." },
+        { cmd: 'git diff | claude -p "review questo diff"', desc: "Esempio pratico: analisi automatica delle modifiche prima del commit." },
+        { cmd: "--output-format json", desc: "Output strutturato con result, cost_usd, session_id, is_error. Ideale per parsing con jq o altri tool." },
+        { cmd: "--output-format stream-json", desc: "Stream JSON line-by-line degli eventi man mano che arrivano. Per pipeline che devono processare l'output in tempo reale." },
+        { cmd: "--max-turns N", desc: "Limita il numero di turn agentici prima di fermarsi. Circuit breaker per pipeline automatizzate dove un loop senza controllo sarebbe costoso." },
+        { cmd: "--session-id <id>", desc: "Riprende una sessione specifica in modalità non interattiva. Permette workflow multi-step: analizza in step 1, fixa in step 2, usando lo stesso contesto." },
+      ]},
+      { title: "Worktree isolati", items: [
+        { cmd: "--worktree / -w", desc: "Crea un git worktree isolato e avvia la sessione al suo interno. Le modifiche sono separate dal branch principale. Pulizia automatica se non ci sono cambiamenti." },
+        { cmd: "/batch", desc: "Esegue modifiche su larga scala su più file in parallelo usando worktree isolati, poi crea automaticamente pull request." },
+      ]},
+      { title: "Agenti e multi-agent", items: [
+        { cmd: "/agents", desc: "Gestisce le configurazioni dei subagent: istanze Claude specializzate con contesto, persona e tool access propri." },
+        { cmd: "--agents", desc: "Definisce subagent personalizzati inline al lancio senza file di configurazione. Utile per pipeline CI/CD." },
+        { cmd: "claude --bg", desc: "Avvia una sessione in background. Combinabile con --exec per task shell asincroni." },
+      ]},
+    ]
+  },
+  {
+    id: "qualita", icon: "ti-checkup-list", label: "Qualità & review", color: "pink",
+    intro: "Comandi per analisi della qualità del codice, revisione delle modifiche e debug.",
+    sections: [
+      { title: "Revisione codice", items: [
+        { cmd: "/diff", desc: "Apre un diff viewer interattivo con tutte le modifiche della sessione. Modalità per-turn per vedere cosa è cambiato a ogni step. Da usare come abitudine prima di ogni commit." },
+        { cmd: "/review", desc: "Avvia una revisione generale del codice nel contesto corrente." },
+        { cmd: "/code-review --fix", desc: "Analizza il codice e applica automaticamente i problemi trovati." },
+        { cmd: "/security-review", desc: "Revisione mirata alle vulnerabilità di sicurezza sul branch corrente." },
+      ]},
+      { title: "Pulizia e refactoring", items: [
+        { cmd: "/simplify", desc: "Avvia una pipeline di review con tre agenti che verificano problemi architetturali, logica duplicata e inefficienze di performance. Pensato come quality gate prima delle PR." },
+      ]},
+      { title: "Debug e diagnostica", items: [
+        { cmd: "--debug", desc: "Mostra input/output raw di tutti i tool call. Utile per capire cosa Claude sta eseguendo effettivamente sotto il cofano." },
+        { cmd: "/doctor", desc: "Diagnostica l'installazione e la configurazione di Claude Code." },
+        { cmd: "--safe-mode", desc: "Disabilita tutte le personalizzazioni (CLAUDE.md, hooks, settings) per troubleshooting." },
+        { cmd: "/insights", desc: "Legge l'utilizzo dell'ultimo mese e compila un report HTML dettagliato su pattern, costi e history. Da eseguire una volta al mese." },
+      ]},
+    ]
+  },
+  {
+    id: "personalizzazione", icon: "ti-adjustments", label: "Config & personalizzazione", color: "gray",
+    intro: "Configurazione del comportamento di Claude Code tramite settings, variabili d'ambiente, hooks e comandi custom.",
+    sections: [
+      { title: "Comandi slash personalizzati", items: [
+        { cmd: "~/.claude/commands/mio-cmd.md", desc: "Comandi slash personali disponibili in tutti i progetti. Si invocano con /mio-cmd. Supportano $ARGUMENTS per valori dinamici, !`comando` per eseguire bash prima del processing, @filename per includere file." },
+        { cmd: ".claude/commands/qa.md", desc: "Comandi slash a livello di progetto, disponibili solo in quella directory. Utile per workflow specifici del team." },
+        { cmd: "/reload-skills", desc: "Ricarica le skills disponibili senza riavviare la sessione." },
+      ]},
+      { title: "Hooks e automazioni", items: [
+        { cmd: "/hooks", desc: "Gestisce le automazioni che si attivano su eventi dei tool: prima di modifiche file, dopo comandi bash, all'avvio della sessione. Supportano anche hook HTTP per integrazioni con servizi esterni." },
+        { cmd: "/keybindings", desc: "Personalizza i tasti rapidi (salvati in ~/.claude/keybindings.json). First match wins." },
+      ]},
+      { title: "Variabili d'ambiente chiave", items: [
+        { cmd: "ANTHROPIC_API_KEY=sk-ant-...", desc: "Chiave API (richiesta per utilizzo via API diretta)." },
+        { cmd: "CLAUDE_CODE_MODEL=claude-sonnet-4-6", desc: "Modello di default per tutte le sessioni." },
+        { cmd: "CLAUDE_CODE_SUBAGENT_MODEL=claude-haiku-4-5", desc: "Modello usato dai subagent generati da Claude." },
+        { cmd: "CLAUDE_CODE_MAX_OUTPUT_TOKENS=4096", desc: "Limite massimo di token in output." },
+        { cmd: "NO_COLOR=1", desc: "Disabilita l'output colorato (utile in CI o terminali che non supportano ANSI)." },
+        { cmd: "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1", desc: "Disabilita telemetria e analytics." },
+        { cmd: "ANTHROPIC_BASE_URL=https://...", desc: "Override dell'endpoint API. Per proxy aziendali, provider alternativi (Bedrock, Vertex, Foundry) o server LLM locali." },
+      ]},
+    ]
+  },
+];
+
+const colors = {
+  purple: { bg: "#EEEDFE", text: "#3C3489", border: "#534AB7", pill: "#AFA9EC" },
+  teal:   { bg: "#E1F5EE", text: "#085041", border: "#0F6E56", pill: "#5DCAA5" },
+  blue:   { bg: "#E6F1FB", text: "#0C447C", border: "#185FA5", pill: "#85B7EB" },
+  amber:  { bg: "#FAEEDA", text: "#633806", border: "#854F0B", pill: "#EF9F27" },
+  coral:  { bg: "#FAECE7", text: "#712B13", border: "#993C1D", pill: "#F0997B" },
+  green:  { bg: "#EAF3DE", text: "#27500A", border: "#3B6D11", pill: "#97C459" },
+  pink:   { bg: "#FBEAF0", text: "#72243E", border: "#993556", pill: "#ED93B1" },
+  gray:   { bg: "#F1EFE8", text: "#444441", border: "#5F5E5A", pill: "#B4B2A9" },
+};
+
+let activeId = "avvio";
+
+function copyCmd(el, cmd) {
+  navigator.clipboard.writeText(cmd).then(() => {
+    el.textContent = "✓ copiato";
+    el.classList.add("copied");
+    setTimeout(() => { el.textContent = cmd; el.classList.remove("copied"); }, 1500);
+  });
+}
+
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = categories.map(cat => {
+    const c = colors[cat.color];
+    const isActive = cat.id === activeId;
+    const style = isActive
+      ? `background:${c.bg};color:${c.text};border:1.5px solid ${c.border};font-weight:500`
+      : "";
+    return `<button class="tab${isActive ? " active" : ""}" style="${style}" onclick="setActive('${cat.id}')">
+      <i class="ti ${cat.icon}" aria-hidden="true"></i>${cat.label}
+    </button>`;
+  }).join("");
+}
+
+function renderContent() {
+  const cat = categories.find(c => c.id === activeId);
+  const c = colors[cat.color];
+  let html = `<div class="intro-box" style="background:${c.bg};border:0.5px solid ${c.pill};color:${c.text}">${cat.intro}</div>`;
+  for (const sec of cat.sections) {
+    html += `<div class="section"><h3 class="section-title" style="border-color:${c.border}">${sec.title}</h3>`;
+    for (const item of sec.items) {
+      const escaped = item.cmd.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      html += `<div class="cmd-item">
+        <code class="cmd" onclick="copyCmd(this,'${escaped}')">${item.cmd}</code>
+        <p class="cmd-desc">${item.desc}</p>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  document.getElementById("content").innerHTML = html;
+}
+
+function setActive(id) {
+  activeId = id;
+  renderTabs();
+  renderContent();
+  document.getElementById("search").value = "";
+  document.getElementById("clear-btn").style.display = "none";
+}
+
+function onSearch(val) {
+  document.getElementById("clear-btn").style.display = val ? "block" : "none";
+  document.getElementById("tabs").style.display = val ? "none" : "flex";
+  if (!val.trim()) { renderContent(); return; }
+  const q = val.toLowerCase();
+  const results = [];
+  for (const cat of categories) {
+    for (const sec of cat.sections) {
+      for (const item of sec.items) {
+        if (item.cmd.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q)) {
+          results.push({ ...item, catLabel: cat.label, secTitle: sec.title, catColor: cat.color });
+        }
+      }
+    }
+  }
+  if (results.length === 0) {
+    document.getElementById("content").innerHTML = `<p class="no-results">Nessun risultato per "${val}".</p>`;
+    return;
+  }
+  let html = `<p class="result-count">${results.length} risultati</p>`;
+  for (const item of results) {
+    const c = colors[item.catColor];
+    const escaped = item.cmd.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    html += `<div style="margin-bottom:4px">
+      <span class="tag" style="background:${c.bg};color:${c.text}">${item.catLabel} › ${item.secTitle}</span>
+      <div class="cmd-item">
+        <code class="cmd" onclick="copyCmd(this,'${escaped}')">${item.cmd}</code>
+        <p class="cmd-desc">${item.desc}</p>
+      </div>
+    </div>`;
+  }
+  document.getElementById("content").innerHTML = html;
+}
+
+function clearSearch() {
+  document.getElementById("search").value = "";
+  document.getElementById("clear-btn").style.display = "none";
+  document.getElementById("tabs").style.display = "flex";
+  renderContent();
+}
+
+renderTabs();
+renderContent();
+</script>
+</body>
+</html>
